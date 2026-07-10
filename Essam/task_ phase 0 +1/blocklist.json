@@ -1,0 +1,88 @@
+{
+  "_readme": "Each entry is a regex checked against the FULL command string before any permission prompt. If a pattern matches, the tool call is rejected immediately -- no allow-once, no allow-session, no override. Keep this list to things that are catastrophic and essentially never legitimate for a recon agent to run. Anything merely 'risky but sometimes needed' belongs in the permission-gate flow instead, not here.",
+
+  "shell": [
+    {
+      "pattern": "rm\\s+-[a-z]*r[a-z]*f|rm\\s+-[a-z]*f[a-z]*r",
+      "reason": "Recursive force delete -- classic 'rm -rf /' or 'rm -rf ~' pattern. Irreversible mass data loss."
+    },
+    {
+      "pattern": ":\\(\\)\\s*\\{\\s*:\\|:&\\s*\\};\\s*:",
+      "reason": "Fork bomb -- ':(){ :|:& };:' spawns processes until the system dies."
+    },
+    {
+      "pattern": "mkfs(\\.\\w+)?\\s",
+      "reason": "Formats a filesystem/partition -- destroys all data on the target device."
+    },
+    {
+      "pattern": "dd\\s+.*of=/dev/(sd|nvme|hd|disk)",
+      "reason": "Raw disk write with dd -- can overwrite an entire physical disk."
+    },
+    {
+      "pattern": "chmod\\s+-R?\\s*777\\s+/(\\s|$)",
+      "reason": "Recursively opens permissions on the root filesystem -- system-wide privilege/security collapse."
+    },
+    {
+      "pattern": "chown\\s+-R.*\\s+/(\\s|$)",
+      "reason": "Recursive ownership change on root filesystem -- can break the OS entirely."
+    },
+    {
+      "pattern": "(^|\\s)>\\s*/dev/sd[a-z]",
+      "reason": "Redirecting output directly onto a raw block device -- corrupts the device."
+    },
+    {
+      "pattern": "shutdown|poweroff|halt\\s|reboot",
+      "reason": "Powers off or restarts the host machine the agent is running on."
+    },
+    {
+      "pattern": "curl\\s+.*\\|\\s*(sudo\\s+)?(sh|bash|zsh)",
+      "reason": "Classic 'curl | bash' remote code execution pattern -- runs arbitrary untrusted code from the network with no review."
+    },
+    {
+      "pattern": "wget\\s+.*\\|\\s*(sudo\\s+)?(sh|bash|zsh)",
+      "reason": "Same risk as curl-pipe-to-shell, via wget."
+    },
+    {
+      "pattern": "(^|\\s)(sudo\\s+)?passwd\\s",
+      "reason": "Changes a user password on the host -- could lock out operators or escalate access."
+    },
+    {
+      "pattern": "iptables\\s+-F|ufw\\s+disable",
+      "reason": "Flushes or disables the host firewall -- removes network protections mid-engagement."
+    },
+    {
+      "pattern": "history\\s+-c|shred\\s+.*(bash_history|\\.log)",
+      "reason": "Destroys audit trails -- an agent should never be able to erase its own logs or shell history."
+    }
+  ],
+
+  "http": [
+    {
+      "pattern": "^https?://169\\.254\\.169\\.254",
+      "reason": "Cloud metadata service (AWS/GCP/Azure IMDS). Fetching this is SSRF against the agent's own host, not the target -- can leak cloud credentials."
+    },
+    {
+      "pattern": "^https?://(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|\\[::1\\])",
+      "reason": "Blocks the agent from silently pivoting HTTP calls back onto the machine it's running on."
+    },
+    {
+      "pattern": "^file://",
+      "reason": "file:// scheme in an HTTP tool call can be used to read local files via a library that supports it -- treat as an attempted local file read in disguise."
+    }
+  ],
+
+  "file": [
+    {
+      "pattern": "^/etc/(shadow|sudoers|passwd)$",
+      "reason": "Core OS auth/privilege files. Reading is a credential-harvesting risk, writing can grant root."
+    },
+    {
+      "pattern": "^/root/\\.ssh/|^/home/[^/]+/\\.ssh/",
+      "reason": "SSH private keys and authorized_keys -- writing here can plant persistent access; reading exfiltrates keys."
+    },
+    {
+      "pattern": "\\.\\./\\.\\./\\.\\./",
+      "reason": "Deep path traversal sequence -- almost always an attempt to escape the intended working directory."
+    }
+  ]
+}
