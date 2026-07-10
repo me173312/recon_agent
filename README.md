@@ -25,14 +25,14 @@ ai-recon-agent/
 Windows PowerShell:
 
 ```powershell
-git clone https://github.com/YOUR_USERNAME/ai-recon-agent.git
+git clone https://github.com/me173312/recon_agent.git
 cd ai-recon-agent
 ```
 
 Linux/macOS:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-recon-agent.git
+git clone https://github.com/me173312/recon_agent.git
 cd ai-recon-agent
 ```
 
