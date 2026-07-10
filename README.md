@@ -90,8 +90,6 @@ BASE_URL=https://api.openai.com/v1
 OFFLINE_DEMO=false
 ```
 
-Do not commit `Haitham/.env`. It is ignored by `.gitignore`.
-
 ## 4. Run Safe Demo
 
 Use this first to make sure the project works.
